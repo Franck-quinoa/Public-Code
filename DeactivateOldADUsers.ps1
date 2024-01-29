@@ -10,6 +10,9 @@
 # Port=587
 # Username=user@domaine.com
 # Password=pass
+# Le fichier To doit contenir les adresses e-mail des destinataires, séparées par des virgules
+# Par exemple :
+# Manager1@domaine.com,Manager2@domaine.com
 
 # Définir le nombre de mois d'inactivité
 $InactiveMonths = 6
@@ -47,6 +50,16 @@ if ($DisabledUsers) {
 
     # Créer un objet PSCredential avec l'identifiant et le mot de passe du serveur SMTP
     $Credential = New-Object System.Management.Automation.PSCredential ($SMTPParameters.Username, ($SMTPParameters.Password | ConvertTo-SecureString -AsPlainText -Force))
+
+    # Lire le fichier texte contenant les adresses e-mail des destinataires
+    $To = Get-Content -Path "C:\To.txt"
+
+    # Convertir le contenu du fichier en un tableau de chaînes
+    [string []]$To = $To.Split(',')
+
+    # Définir l'expéditeur et le sujet du message
+    $From = "dgfip@toto.com"
+    $Subject = "Liste des utilisateurs désactivés"
 
     # Envoyer le message en HTML
     Send-MailMessage -To $To -From $From -Subject $Subject -Body $Body -SmtpServer $SMTPParameters.Server -Credential $Credential -Port $SMTPParameters.Port -UseSsl -BodyAsHtml
