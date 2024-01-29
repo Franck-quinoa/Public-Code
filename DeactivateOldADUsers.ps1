@@ -1,16 +1,15 @@
-###################################################################
-# Commandes rapides pour désactiver ou ordonner des utilisateurs. #
-###################################################################
-
-# Désactiver les utilisateurs qui ne se sont pas connectés ces 6 derniers mois
-#Search-ADAccount -UsersOnly -AccountInactive -TimeSpan 180.00:00:00 | Disable-ADAccount
-
-# Déplacer dans une Unité d'Organisation des utilisateurs qui ne se sont pas connectés ces 6 derniers mois
-#Search-ADAccount -UsersOnly -AccountInactive -TimeSpan 180.00:00:00 | Move-ADObject -TargetPath "OU=Disabled Users,DC=domain,DC=com"
-
-###########################################################################
-# Script pour désactiver les utilisateurs et envoyer par mail le rapport. #
-###########################################################################
+# Ce script désactive les utilisateurs inactifs d'Active Directory et envoie un e-mail avec la liste des utilisateurs désactivés
+# Le fichier d'exclusions doit contenir les noms des utilisateurs à exclure, un par ligne
+# Par exemple :
+# Admin
+# Service
+# Test
+# Le fichier SMTP doit contenir les paramètres du serveur SMTP, séparés par des signes égal
+# Par exemple :
+# Server=smtp.domaine.com
+# Port=587
+# Username=user@domaine.com
+# Password=pass
 
 # Définir le nombre de mois d'inactivité
 $InactiveMonths = 6
@@ -21,9 +20,12 @@ $Date = (Get-Date).AddMonths(-$InactiveMonths)
 # Lister les utilisateurs inactifs depuis la date limite
 $InactiveUsers = Search-ADAccount -AccountInactive -DateTime $Date -UsersOnly | Where-Object { $_.LastLogonDate }
 
-# Désactiver les utilisateurs inactifs qui ne sont pas déjà désactivés
+# Lire le fichier texte contenant la liste d'exception
+$ExclusionList = Get-Content -Path "C:\exclusion.txt"
+
+# Désactiver les utilisateurs inactifs qui ne sont pas déjà désactivés ni dans la liste d'exception
 $DisabledUsers = foreach ($User in $InactiveUsers) {
-    if ($User.Enabled) {
+    if ($User.Enabled -and $User.Name -notin $ExclusionList) {
         Disable-ADAccount -Identity $User
         $User
     }
@@ -40,12 +42,12 @@ if ($DisabledUsers) {
     # Créer le corps du message en HTML
     $Body = "<html><body><p>Les utilisateurs suivants ont été désactivés :</p>$Table</body></html>"
 
-    # Définir le sujet, le destinataire, l'expéditeur et le serveur SMTP du message
-    $Subject = "Liste des utilisateurs désactivés"
-    $To = "votre_adresse_email@domaine.com"
-    $From = "noreply@domaine.com"
-    $SMTPServer = "smtp.domaine.com"
+    # Lire le fichier texte contenant les paramètres du serveur SMTP
+    $SMTPParameters = Get-Content -Path "C:\SMTP.txt" | ConvertFrom-StringData
+
+    # Créer un objet PSCredential avec l'identifiant et le mot de passe du serveur SMTP
+    $Credential = New-Object System.Management.Automation.PSCredential ($SMTPParameters.Username, ($SMTPParameters.Password | ConvertTo-SecureString -AsPlainText -Force))
 
     # Envoyer le message en HTML
-    Send-MailMessage -To $To -From $From -Subject $Subject -Body $Body -SmtpServer $SMTPServer -BodyAsHtml
+    Send-MailMessage -To $To -From $From -Subject $Subject -Body $Body -SmtpServer $SMTPParameters.Server -Credential $Credential -Port $SMTPParameters.Port -UseSsl -BodyAsHtml
 }
