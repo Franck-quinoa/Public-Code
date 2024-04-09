@@ -1,5 +1,6 @@
 # Script PowerShell pour réactiver l'add-in KoffAddIn.UserInterface dans Outlook
 # Effectue les opérations de la partie "Clarifications About Inactive/Unloaded Add-Ins" de : https://support.kerioconnect.gfi.com/hc/en-us/articles/360015186420-Re-Enabling-Deactivated-KOFF-Add-In
+# généré par Copilot https://copilot.microsoft.com/sl/gBJMj9jkFFI
 
 # Vérifiez si Outlook est en cours d'exécution et fermez-le si nécessaire
 $OutlookProcess = Get-Process | Where-Object {$_.ProcessName -eq "OUTLOOK"}
