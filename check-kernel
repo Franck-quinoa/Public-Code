@@ -1,0 +1,20 @@
+#!/bin/bash
+
+current=$(uname -r)
+latest=$(ls -1 /boot/vmlinuz-* 2>/dev/null | sed 's/.*vmlinuz-//' | sort -V | tail -1)
+
+echo "Noyau en cours :  $current"
+echo "Dernier noyau :   $latest"
+
+if [ -z "$latest" ]; then
+    echo "Impossible de déterminer la dernière version dans /boot."
+    exit 2
+fi
+
+if [ "$current" = "$latest" ]; then
+    echo "✔ Le noyau en cours est déjà le plus récent."
+    exit 0
+else
+    echo "⚠ Un reboot est nécessaire pour utiliser le dernier noyau."
+    exit 1
+fi
