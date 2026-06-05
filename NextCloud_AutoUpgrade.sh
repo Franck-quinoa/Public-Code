@@ -10,6 +10,8 @@ OLD_VERSION=$1
 NEW_VERSION=$2
 # Install path
 INSTALL_PATH=/var/www
+# Name of the Database 4 backup
+DB_NAME=nextcloud
 
 ###
 # Script
@@ -19,6 +21,8 @@ INSTALL_PATH=/var/www
 sudo service apache2 stop
 # Backup the original nexcloud with the version number for config recall
 sudo mv $INSTALL_PATH/nextcloud $INSTALL_PATH/nextcloud_$OLD_VERSION
+# Backup the DB to original nexcloud w/ version nb
+sudo mysql -u root $DB_NAME | sudo gzip > $INSTALL_PATH/nextcloud_$OLD_VERSION/DB_DUMP_NC_$OLD_VERSION.sql.gz
 # Download new version's release from github
 wget -O /tmp/nextcloud-$NEW_VERSION.tar.bz2 https://github.com/nextcloud-releases/server/releases/download/v$NEW_VERSION/nextcloud-$NEW_VERSION.tar.bz2
 # remove old version's release package (for disk space)
