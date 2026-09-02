@@ -49,8 +49,29 @@ param(
     [string]$SearchBase,
 
     [Parameter()]
-    [string]$CheminCSV = (Join-Path -Path $PSScriptRoot -ChildPath 'Inventaire_Ordinateurs_AD.csv')
+    [string]$CheminCSV
 )
+
+# ---------------------------------------------------------------------------
+# Détermination du chemin d'export
+# ---------------------------------------------------------------------------
+
+# Le chemin est calculé après le bloc param, car certaines versions ou certains
+# modes d'exécution de PowerShell ne renseignent pas encore $PSScriptRoot lors
+# de l'évaluation de la valeur par défaut d'un paramètre.
+if ([string]::IsNullOrWhiteSpace($CheminCSV)) {
+    if (-not [string]::IsNullOrWhiteSpace($PSCommandPath)) {
+        $DossierScript = Split-Path -Parent $PSCommandPath
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace($MyInvocation.MyCommand.Path)) {
+        $DossierScript = Split-Path -Parent $MyInvocation.MyCommand.Path
+    }
+    else {
+        $DossierScript = (Get-Location).Path
+    }
+
+    $CheminCSV = Join-Path -Path $DossierScript -ChildPath 'Inventaire_Ordinateurs_AD.csv'
+}
 
 # ---------------------------------------------------------------------------
 # Vérification des prérequis
