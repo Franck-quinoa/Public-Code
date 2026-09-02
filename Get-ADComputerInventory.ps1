@@ -8,9 +8,10 @@
     réseau, activité, mot de passe, sécurité, délégation, groupes, emplacement
     et gestion.
 
-    Les ordinateurs activés et désactivés sont inclus. Les propriétés contenant
-    plusieurs valeurs sont réunies avec le séparateur " | " afin de conserver
-    une ligne par ordinateur dans le fichier CSV.
+    Par défaut, seuls les ordinateurs activés sont inclus. Le commutateur -All
+    permet d'inclure également les ordinateurs désactivés. Les propriétés
+    contenant plusieurs valeurs sont réunies avec le séparateur " | " afin de
+    conserver une ligne par ordinateur dans le fichier CSV.
 
 .PARAMETER Server
     Nom DNS du domaine ou nom d'un contrôleur de domaine à interroger.
@@ -21,12 +22,21 @@
     Exemple : OU=Postes,DC=contoso,DC=local
     Par défaut, tout le domaine est interrogé.
 
+.PARAMETER All
+    Inclut tous les ordinateurs, activés et désactivés.
+    Sans ce commutateur, seuls les ordinateurs activés sont inventoriés.
+
 .PARAMETER CheminCSV
     Chemin du fichier CSV à créer.
     Par défaut : Inventaire_Ordinateurs_AD.csv dans le dossier du script.
 
 .EXAMPLE
     .\Get-ADComputerInventory.ps1
+
+.EXAMPLE
+    .\Get-ADComputerInventory.ps1 -All
+
+    Exporte tous les ordinateurs, y compris les comptes désactivés.
 
 .EXAMPLE
     .\Get-ADComputerInventory.ps1 -Server contoso.local
@@ -47,6 +57,9 @@ param(
 
     [Parameter()]
     [string]$SearchBase,
+
+    [Parameter()]
+    [switch]$All,
 
     [Parameter()]
     [string]$CheminCSV
@@ -137,8 +150,17 @@ $Proprietes = @(
     'userAccountControl'
 )
 
+# Par défaut, limite la requête aux comptes ordinateurs activés.
+# Le commutateur -All supprime ce filtre.
+$FiltreOrdinateurs = if ($All) {
+    '*'
+}
+else {
+    'Enabled -eq $true'
+}
+
 $ParametresRecherche = @{
-    Filter      = '*'
+    Filter      = $FiltreOrdinateurs
     Properties  = $Proprietes
     ErrorAction = 'Stop'
 }
@@ -166,7 +188,10 @@ catch {
 }
 
 Write-Host ''
+$ModeInventaire = if ($All) { 'Tous les ordinateurs' } else { 'Ordinateurs activés uniquement' }
+
 Write-Host "Domaine interrogé : $($Domaine.DNSRoot)"
+Write-Host "Mode : $ModeInventaire"
 Write-Host "Ordinateurs trouvés : $($Ordinateurs.Count)"
 Write-Host ''
 
